@@ -35,14 +35,43 @@ PDF 18개 + 노트북 14개, 15주차 분량)는 **진도 범위를 참고하는
 
 ## ③ 현재 개발 상태와 다음 할 일
 
-**2026-08-10 — 전 범위 완성.** `npm test` **188가지 통과**, 문법 전수 검사 통과, 빌드 정상.
+**2026-08-10 — 전 범위 완성 + 배포 완료.** `npm test` **188가지 통과**, 문법 전수 검사 통과, 빌드 정상.
+
+- 저장소: https://github.com/trmoo/llm-rag-lab
+- Pages: **https://trmoo.github.io/llm-rag-lab/** (열림 확인, 배포본 MD5 가 로컬 빌드와 일치)
 
 ### 다음에 할 만한 것 (사용자 요청 시)
 
 - 교사용 설치 안내 페이지 (`public/설치안내.html`) — 다른 앱들과 같은 형태
 - 화면별 인쇄용 학습지 출력
 - 자기 문서를 올려 RAG 를 돌려 보는 화면 (파일 읽기 필요)
-- 깃허브 저장소 생성 및 Pages 배포 (아직 안 함)
+
+---
+
+## 깃허브 배포 (2026-08-10)
+
+- 첫 푸시 한 번으로 **build·deploy 두 잡이 모두 통과**했다. 손으로 만질 것이 없었다.
+- **★ 여기서는 `configure-pages@v5` 의 `enablement: true` 가 문제없이 통과했다.**
+  푸시 전에 이미 저장소의 Pages 가 켜져 있었기 때문이다(`has_pages = true`).
+  `22aiBasics_trmoo`·`physical_ideation` 은 꺼진 상태라 거부됐었다.
+  → **빈 저장소를 새로 만들 때는 Settings → Pages → Source 를 「GitHub Actions」 로
+  먼저 켜 두면 첫 푸시부터 깔끔하게 배포된다.**
+- ⚠️ **「Deploy from a branch」 를 고르면 안 된다.** `dist/` 를 커밋하지 않는 우리 방식에서는
+  깃허브가 빌드하지 않은 원본을 그대로 올려, 개발용 `index.html` 이 서비스되고 흰 화면만 뜬다.
+- 이 PC 에 `gh` CLI 가 없다. 확인은 REST API 로 한다.
+  ```bash
+  curl -s https://api.github.com/repos/trmoo/llm-rag-lab/actions/runs?per_page=3   # 성공 여부
+  curl -s https://api.github.com/repos/trmoo/llm-rag-lab/actions/runs/<id>/jobs    # 단계별 결과
+  ```
+  ⚠️ `.../pages` 엔드포인트는 **인증이 필요해 404 가 나온다.** 배포 확인은 실제 주소로 한다.
+  ```bash
+  curl -sI https://trmoo.github.io/llm-rag-lab/          # 200 이면 열린 것
+  ```
+- 깃 전역 사용자 설정이 비어 있어 **앱 폴더에서** 넣어 주었다.
+  ```bash
+  git config user.name trmoo
+  git config user.email trmoo@users.noreply.github.com
+  ```
 
 ---
 
