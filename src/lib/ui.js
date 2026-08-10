@@ -49,7 +49,18 @@ function isPlainObject(x) {
 function append(el, children) {
   for (const c of children.flat(4)) {
     if (c === null || c === undefined || c === false || c === true) continue;
-    el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+    if (c instanceof Node) { el.appendChild(c); continue; }
+    const text = String(c);
+    // mono( )·b( ) 같은 도우미는 글자가 아니라 화면 요소를 돌려준다.
+    // 거기에 문자열을 + 로 이어 붙이면 「[object HTMLElement]」 가 그대로 찍힌다.
+    // 조용히 지나가면 화면이 망가진 채로 배포되므로, 여기서 크게 알린다.
+    if (text.includes('[object ')) {
+      throw new Error(
+        `화면 요소를 문자열과 + 로 이어 붙였습니다: "${text.slice(0, 60)}"\n`
+        + "  → mono('가') + ' 설명'  이 아니라  h('span', mono('가'), ' 설명')  으로 나란히 놓으세요.",
+      );
+    }
+    el.appendChild(document.createTextNode(text));
   }
 }
 
