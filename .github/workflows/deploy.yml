@@ -1,0 +1,77 @@
+# LLM·RAG 실습실 — © 2026 티쳐무 · 모든 권리 보유
+#
+# 푸시할 때마다 시험 → 문법 검사 → 빌드 → 결과 점검을 거쳐 GitHub Pages 에 올린다.
+# dist/ 는 저장소에 커밋하지 않는다. 시험이 깨지면 배포도 멈춘다.
+name: Pages 배포
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 시험 (계산·자료 검증)
+        run: npm test
+
+      - name: 문법 전수 검사
+        # 시험은 탭 파일(DOM)을 불러오지 않으므로, 탭 파일 문법 오류는 여기서만 잡힌다.
+        # 이 단계를 빼지 말 것.
+        run: npm run check:syntax
+
+      - name: 빌드
+        run: npm run build
+
+      - name: 빌드 결과 점검
+        run: |
+          test -f dist/index.html || { echo "::error::dist/index.html 이 없습니다"; exit 1; }
+          SIZE=$(stat -c%s dist/index.html)
+          echo "빌드 크기: ${SIZE} bytes"
+          [ "$SIZE" -gt 200000 ] || { echo "::error::결과물이 너무 작습니다 (${SIZE} bytes)"; exit 1; }
+          # 저작권 표시가 압축 후에도 살아 있는지 (/*! 배너 + HTML 주석 + 화면 푸터)
+          COPY=$(grep -c "티쳐무" dist/index.html || true)
+          echo "저작권 표시가 있는 줄: ${COPY}"
+          [ "$COPY" -ge 3 ] || { echo "::error::저작권 표시가 사라졌습니다"; exit 1; }
+          # 원본 강의 자료가 딸려 들어가지 않았는지
+          ! find dist -name '*.pdf' -o -name '*.ipynb' | grep -q . \
+            || { echo "::error::원본 자료가 빌드에 섞였습니다"; exit 1; }
+
+      - uses: actions/configure-pages@v5
+        continue-on-error: true
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,21 @@
+{
+  "name": "llm-rag-lab",
+  "version": "1.0.0",
+  "description": "LLM·RAG 실습실 — 텍스트 분석부터 RAG·에이전트까지 브라우저에서 직접 돌려 보는 학습 앱",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node test/run.mjs",
+    "check:syntax": "node test/syntax.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "vite": "^5.4.0",
+    "vite-plugin-singlefile": "^2.0.3"
+  }
+}

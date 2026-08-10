@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vite/
+*.log
+
+# 강의 원본 자료는 저작권상 저장소에 올리지 않는다
+*.pdf
+*.docx
+*.ipynb
+source/
+원본자료/
