@@ -27,8 +27,16 @@ function findScreen(tabId, screenId) {
   return { tab, screen };
 }
 
+/**
+ * 화면 이동.
+ * ⚠️ 지금 있는 화면과 같은 곳으로 가면 해시가 바뀌지 않아 hashchange 가 일어나지 않는다.
+ *    그러면 단추를 눌러도 아무 일도 안 일어난 것처럼 보인다.
+ *    (배움 지도에서 ① 카드의 「가기」가 먹통이던 원인) 그래서 직접 다시 그려 준다.
+ */
 function go(tabId, screenId) {
-  location.hash = `#${tabId}/${screenId}`;
+  const next = `#${tabId}/${screenId}`;
+  if (location.hash === next) render();
+  else location.hash = next;
 }
 
 /* ─────────────────────────────── 그리기 ─────────────────────────────── */

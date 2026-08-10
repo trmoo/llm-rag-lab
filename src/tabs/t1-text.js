@@ -29,8 +29,10 @@ const mapScreen = {
 
       card('여섯 걸음',
         h('div.cols',
+          // ① 은 지금 보고 있는 이 화면이 속한 탭이다. 「가기」가 배움 지도 자기 자신을
+          //    가리키면 아무 일도 안 일어나므로, 실제 내용이 시작되는 화면으로 보낸다.
           stepCard(ctx, '①', '글을 다루기', 'text', '지저분한 글을 다듬고 낱말로 쪼갠다',
-            ['정제·정규화', '토큰화', '한국어 형태소', '정규표현식']),
+            ['정제·정규화', '토큰화', '한국어 형태소', '정규표현식'], 'clean'),
           stepCard(ctx, '②', '숫자로 바꾸기', 'number', '낱말을 숫자 벡터로 만들어 계산한다',
             ['단어 주머니', 'TF-IDF', '코사인 유사도', '감성 분류', '단어 임베딩']),
           stepCard(ctx, '③', '맥락을 읽기', 'context', '순서와 문맥을 이해하는 신경망',
@@ -103,7 +105,8 @@ const mapScreen = {
   },
 };
 
-function stepCard(ctx, num, title, tabId, lead, items) {
+/** @param {string} [screenId] 비우면 그 탭의 첫 화면으로 간다 */
+function stepCard(ctx, num, title, tabId, lead, items, screenId) {
   return h('div.card', { style: { margin: 0 } },
     h('div.card-body',
       h('div', { style: { display: 'flex', gap: '10px', alignItems: 'baseline' } },
@@ -114,7 +117,7 @@ function stepCard(ctx, num, title, tabId, lead, items) {
       h('div.pills', ...items.map((x) => h('span.pill', { style: { cursor: 'default' } }, x))),
       button('가기 →', () => {
         const tab = ctx.TABS.find((t) => t.id === tabId);
-        ctx.go(tabId, tab.screens[0].id);
+        ctx.go(tabId, screenId || tab.screens[0].id);
       }, 'ghost small'),
     ),
   );
@@ -126,10 +129,12 @@ const cleanScreen = {
   title: '전처리 공방',
   render(ctx) {
     const wrap = h('div');
+    // 스위치는 모두 꺼진 채로 시작한다.
+    // 다듬기 전의 날것을 먼저 보고, 규칙을 하나씩 켜며 무엇이 달라지는지 확인하게 하려는 것이다.
     const state = {
       text: MESSY_TEXTS[0],
-      on: Object.fromEntries(CLEAN_RULES.map((r) => [r.key, true])),
-      squeeze: true,
+      on: Object.fromEntries(CLEAN_RULES.map((r) => [r.key, false])),
+      squeeze: false,
     };
 
     const stepsBox = h('div');
@@ -175,8 +180,21 @@ const cleanScreen = {
       onInput: (v) => { state.text = v; draw(); },
     });
 
+    /* 스위치들을 미리 만들어 두어야 [모두 켜기 / 모두 끄기] 로 함께 움직일 수 있다 */
+    const ruleToggles = CLEAN_RULES.map((r) =>
+      toggle(r.label, false, (v) => { state.on[r.key] = v; draw(); }));
+    const squeezeToggle = toggle('반복 글자 줄이기 (ㅋㅋㅋㅋ → ㅋㅋ)', false,
+      (v) => { state.squeeze = v; draw(); });
+
+    const setAll = (v) => {
+      CLEAN_RULES.forEach((r, i) => { state.on[r.key] = v; ruleToggles[i].setValue(v); });
+      state.squeeze = v;
+      squeezeToggle.setValue(v);
+      draw();
+    };
+
     wrap.append(
-      screenHead('전처리 공방', '요리 전에 재료를 손질하듯, 분석 전에 글을 다듬습니다. 규칙을 껐다 켜 보세요.',
+      screenHead('전처리 공방', '요리 전에 재료를 손질하듯, 분석 전에 글을 다듬습니다. 규칙을 하나씩 켜 보세요.',
         '① 글을 다루기'),
 
       card('왜 다듬어야 할까',
@@ -195,9 +213,12 @@ const cleanScreen = {
           }, `예문 ${i + 1}`)),
         ),
         ta,
-        h('div', { style: { margin: '12px 0' } },
-          ...CLEAN_RULES.map((r) => toggle(r.label, true, (v) => { state.on[r.key] = v; draw(); })),
-          toggle('반복 글자 줄이기 (ㅋㅋㅋㅋ → ㅋㅋ)', true, (v) => { state.squeeze = v; draw(); }),
+        h('p', { style: { color: 'var(--dim)', fontSize: '.9rem', margin: '12px 0 4px' } },
+          '스위치를 ', b('하나씩 켜'), ' 보세요. 켤 때마다 아래 표에 그 단계까지 마친 글이 쌓입니다.'),
+        h('div', { style: { margin: '4px 0 12px' } }, ...ruleToggles, squeezeToggle),
+        h('div.pills',
+          button('모두 켜기', () => setAll(true), 'ghost small'),
+          button('모두 끄기', () => setAll(false), 'ghost small'),
         ),
         stepsBox,
         h('hr', { style: { border: 0, borderTop: '1px solid var(--line)', margin: '16px 0' } }),
